@@ -1,0 +1,155 @@
+#include <Adafruit_Fingerprint.h>
+#include <Wire.h> 
+#include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
+#include "pitches.h"
+
+#define I2C_ADDR 0x27 // Define I2C Address for the LCD
+
+// Analytics Variables
+int player1_wins = 0;
+int player2_wins = 0;
+int p1_score = 0;
+int p2_score = 0;
+
+// Fingerprint Sensor and LCD Setup
+SoftwareSerial mySerial(2, 3);
+Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
+int fingerprintIDs[50];
+int prints = 0;
+LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+// Beam-break Sensor Variables
+const int sensorPin = 2; // Beam-break sensor connected to pin 2
+const int sensorPin2 = 3;
+volatile bool beamBreakDetected = false; // Flag for beam break detection
+volatile bool beamBreakDetected2 = false;
+
+void setup() {
+  // Initialize LCD
+  lcd.begin();
+  lcd.setCursor(0, 0);
+  lcd.print("Welcome to Smart");
+  lcd.setCursor(0, 1);
+  lcd.print("Table Foosball!");
+  delay(3000);
+  lcd.clear();
+
+  // Initialize beam-break sensor
+  pinMode(sensorPin, INPUT_PULLUP);
+  pinMode(sensorPin2, INPUT_PULLUP);
+
+
+  // Attach interrupt to beam-break sensor
+  attachInterrupt(digitalPinToInterrupt(sensorPin), beamBreakHandler, FALLING);
+  attachInterrupt(digitalPinToInterrupt(sensorPin2), beamBreakHandler2, FALLING);
+  
+
+  // Placeholder for Player Registration
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Player 1, Scan:");
+  delay(2000);
+  lcd.clear();
+  lcd.print("Player 2, Scan:");
+  delay(2000);
+  lcd.clear();
+
+  // Start Game Message
+  lcd.setCursor(0, 0);
+  lcd.print("Starting game...");
+  make_sound();
+  delay(1000);
+  lcd.clear();
+
+  Serial.begin(9600);
+  Serial.println("Set up initialized");
+}
+
+void loop() {
+  Serial.println(digitalRead(4));
+  lcd.setCursor(0, 0);
+  lcd.print("Player 1: " + String(p1_score));
+  lcd.setCursor(0, 1);
+  lcd.print("Player 2: " + String(p2_score));
+
+  if (beamBreakDetected) {
+    // Update score for Player 1 (adjust logic for Player 2 if needed)
+    p1_score++;
+    beamBreakDetected = false; // Reset the flag
+    make_sound();
+    Serial.print("Player 1 Goals: ");
+    Serial.println(p1_score);
+
+    // Check for win condition
+    if (p1_score == 10) {
+      win_sound();
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Player 1 Wins!");
+      delay(5000);
+      player1_wins++;
+      p1_score = 0;
+      p2_score = 0;
+      lcd.clear();
+      delay(2000);
+    }
+  }
+
+  if (beamBreakDetected2) {
+    // Update score for Player 1 (adjust logic for Player 2 if needed)
+    p2_score++;
+    beamBreakDetected2 = false; // Reset the flag
+    make_sound();
+    Serial.print("Player 2 Goals: ");
+    Serial.println(p2_score);
+
+    // Check for win condition
+    if (p2_score == 10) {
+      win_sound();
+      lcd.clear();
+      lcd.setCursor(0, 0);
+      lcd.print("Player 2 Wins!");
+      delay(5000);
+      player1_wins++;
+      p1_score = 0;
+      p2_score = 0;
+      lcd.clear();
+      delay(2000);
+    }
+  }
+
+  delay(100); // Small delay to avoid unnecessary looping
+}
+
+void make_sound() {
+  tone(8, NOTE_B5, 100);
+  delay(100);
+  tone(8, NOTE_E6, 850);
+  delay(800);
+  noTone(8);
+}
+
+void win_sound() {
+  tone(8, NOTE_G4, 35);
+  delay(35);
+  tone(8, NOTE_G5, 35);
+  delay(35);
+  tone(8, NOTE_G6, 35);
+  delay(35);
+  noTone(8);
+}
+
+// Interrupt Service Routine (ISR) to handle beam-break detection
+void beamBreakHandler() {
+  // Set the flag when a beam break is detected
+  beamBreakDetected = true;
+
+}
+
+void beamBreakHandler2() {
+  // Set the flag when a beam break is detected
+  beamBreakDetected2 = true;
+
+}
+
