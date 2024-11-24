@@ -24,7 +24,7 @@ int player2_wins = 0;
 int p1_score = 0;
 int p2_score = 0;
 
-SoftwareSerial mySerial(2, 3);
+SoftwareSerial mySerial(5, 6);
 Adafruit_Fingerprint finger = Adafruit_Fingerprint(&mySerial);
 int fingerprintIDs [50];
 int prints = 0;
